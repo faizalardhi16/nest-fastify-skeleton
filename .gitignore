@@ -1,0 +1,28 @@
+# dependencies
+/node_modules
+
+# build
+/dist
+/.cache
+
+# env
+.env
+.env.local
+
+# logs
+logs/
+*.log
+npm-debug.log*
+
+# drizzle
+drizzle/
+*.db
+
+# misc
+.DS_Store
+coverage/
+.nyc_output/
+
+# IDE
+.vscode/
+.idea/
