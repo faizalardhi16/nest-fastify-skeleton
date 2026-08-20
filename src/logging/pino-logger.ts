@@ -1,5 +1,5 @@
 import { pino, Logger as PinoLoggerInstance, Level } from 'pino';
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { EnvConfig } from '../config/env/env.config';
 
@@ -21,6 +21,15 @@ type TransportTarget = {
 export interface BuiltLogger {
   logger: PinoLoggerInstance;
   level: Level;
+}
+
+function resolvePrettyTransportPath(): string {
+  const compiledPath = resolve(__dirname, 'pretty-transport.cjs');
+  if (existsSync(compiledPath)) {
+    return compiledPath;
+  }
+
+  return resolve(process.cwd(), 'src', 'logging', 'pretty-transport.cjs');
 }
 
 const SENSITIVE_PATHS = [
@@ -70,7 +79,7 @@ export function buildPinoLogger(config: EnvConfig): BuiltLogger {
   // JSON mentah di production
   if (!config.isProduction) {
     transports.push({
-      target: resolve(__dirname, 'pretty-transport.cjs'),
+      target: resolvePrettyTransportPath(),
       level,
     });
   }

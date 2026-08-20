@@ -5,10 +5,10 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "build": "nest build --builder swc && cp src/logging/pretty-transport.cjs dist/logging/pretty-transport.cjs",
+    "build": "nest build --builder swc && node -e \"const fs=require('fs'); const path=require('path'); const src=path.resolve('src/logging/pretty-transport.cjs'); const out=path.resolve('dist/logging/pretty-transport.cjs'); fs.mkdirSync(path.dirname(out), {recursive:true}); fs.copyFileSync(src, out);\"",
     "start": "nest start --builder swc",
     "start:dev": "nest start --watch --builder swc",
-    "start:prod": "node dist/main",
+    "start:prod": "node -e \"const fs=require('fs'); const path=require('path'); const src=path.resolve('src/logging/pretty-transport.cjs'); const out=path.resolve('dist/logging/pretty-transport.cjs'); fs.mkdirSync(path.dirname(out), {recursive:true}); if (fs.existsSync(src)) fs.copyFileSync(src, out);\" && node dist/main",
     "typecheck": "tsc --noEmit",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest"
