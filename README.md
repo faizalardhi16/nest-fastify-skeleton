@@ -8,7 +8,7 @@ Sudah dibundel setup lengkap untuk langsung dipakai produksi.
 1. ✅ **NestJS + Fastify adapter** — `@nestjs/platform-fastify` (lebih cepat dari Express)
 2. ✅ **Swagger** — auto docs di `/docs`
 3. ✅ **Auth cookie** — JWT disimpan di HttpOnly cookie (bukan localStorage)
-4. ✅ **Logging proper** — HttpLoggingInterceptor + global error filter
+4. ✅ **Logging proper** — pino structured (file `app.log`/`error.log` + console pretty) + HttpLoggingInterceptor + global error filter
 5. ✅ **Drizzle ORM** — PostgreSQL (schema di `src/database/schema/`)
 6. ✅ **`.env` + ConfigService** — `EnvConfig` singleton (SOLID SRP)
 7. ✅ **Dockerfile** — multistage, non-root, production-ready
@@ -24,7 +24,7 @@ Sudah dibundel setup lengkap untuk langsung dipakai produksi.
 - **Framework**: NestJS 10 + Fastify 4
 - **ORM**: Drizzle (PostgreSQL via `pg`)
 - **Cache**: Redis (ioredis)
-- **Logging**: MongoDB (mongoose)
+- **Logging**: pino (structured, file + console) + MongoDB sink (mongoose)
 - **Storage**: AWS S3 SDK + Alibaba OSS (S3-compatible)
 - **Auth**: JWT + cookie (passport-jwt + @fastify/cookie)
 - **Security**: @fastify/helmet + @fastify/rate-limit (DDoS protection)
@@ -50,6 +50,44 @@ npm run typecheck
 npm run lint
 ```
 
+## Logging (pino)
+
+Logger terstruktur berbasis **pino** — standard NestJS + Fastify.
+
+- **Sink output**:
+  - `logs/app.log` — semua level (debug ke atas)
+  - `logs/error.log` — hanya warn + error (mudah cari masalah)
+  - console pretty di development (human-readable, warna)
+- **Fastify request log** — ter-set ke pino yang sama, jadi incoming/outgoing request
+  juga tercatat (reqId, method, url, status, responseTime).
+- **`AppLoggerService`** — implementasi `LoggerService` NestJS, injectable di semua
+  service/module. Punya `.child(context)` biar tiap module punya context sendiri.
+- **`HttpLoggingInterceptor`** — log per-request structured (method, url, status,
+  durationMs, ip, userAgent). Didaftarkan via `APP_INTERCEPTOR`.
+- **Redaction** — field sensitif (`authorization`, `cookie`, `password`, `token`,
+  `secret`, `apiKey`) otomatis di-`[REDACTED]` supaya gak bocor ke log/file.
+- **MongoDB sink** — `MongoLogService` (collection `logs`) sebagai sink opsional,
+  fire-and-forget. Kalau Mongo offline, app tetap jalan (graceful / degraded).
+- **Graceful degradation** — Redis/Mongo gak tersedia gak akan crash app; cukup tercatat
+  sebagai warning di log.
+
+Contoh pemakaian di service:
+
+```ts
+import { AppLoggerService } from '../../logging/app-logger.service';
+
+@Injectable()
+export class FooService {
+  private readonly logger: AppLoggerService;
+  constructor(appLogger: AppLoggerService) {
+    this.logger = appLogger.child(FooService.name);
+  }
+  doSomething() {
+    this.logger.info('halo', undefined, { some: 'meta' });
+  }
+}
+```
+
 ## Struktur (Clean Architecture + SOLID)
 
 ```
@@ -65,9 +103,12 @@ src/
 ├── database/                    # Drizzle + PostgreSQL
 │   ├── database.module.ts
 │   └── schema/                  # Table definitions
-├── logging/                     # MongoDB log service
-│   ├── logging.module.ts
-│   └── mongo-log.service.ts
+├── logging/                     # Logging: pino structured + MongoDB sink
+│   ├── logging.module.ts        #   module (global), provide pino + AppLoggerService
+│   ├── app-logger.service.ts    #   LoggerService NestJS berbasis pino
+│   ├── pino-logger.ts           #   factory pino (file + console + redaction)
+│   ├── logger.constants.ts      #   injection tokens
+│   └── mongo-log.service.ts     #   sink opsional ke MongoDB
 ├── redis/                       # Redis cache
 │   ├── redis.module.ts
 │   └── redis-cache.service.ts

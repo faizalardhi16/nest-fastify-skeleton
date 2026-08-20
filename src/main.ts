@@ -4,7 +4,7 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import fastifyCookie from '@fastify/cookie';
 import fastifyHelmet from '@fastify/helmet';
 import fastifyRateLimit from '@fastify/rate-limit';
@@ -12,14 +12,17 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { EnvConfig } from './config/env/env.config';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { buildPinoLogger } from './logging/pino-logger';
+import { AppLoggerService } from './logging/app-logger.service';
 
 async function bootstrap(): Promise<void> {
   const config = new EnvConfig(process.env);
-  const logger = new Logger('Bootstrap');
+  const { logger: pinoLogger, level } = buildPinoLogger(config);
+  const logger = new AppLoggerService(pinoLogger, level);
 
   const adapter = new FastifyAdapter({
-    logger: config.isProduction ? false : true,
-    // Timeout handling: default request timeout di-fastify
+    // Fastify pakai pino instance yang sama -> request log masuk ke file + console.
+    logger: pinoLogger,
     requestTimeout: 30_000,
     bodyLimit: 10 * 1024 * 1024, // 10MB
   });

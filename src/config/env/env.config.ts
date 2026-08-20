@@ -9,6 +9,10 @@ export class EnvConfig {
   readonly appName: string;
   readonly prefix: string;
 
+  // Logging
+  readonly logLevel: string;
+  readonly logDir: string;
+
   // Auth / Cookie
   readonly jwtSecret: string;
   readonly jwtExpiresIn: string;
@@ -60,6 +64,9 @@ export class EnvConfig {
     this.port = Number(env.PORT ?? 3000);
     this.appName = env.APP_NAME ?? 'nest-fastify-skeleton';
     this.prefix = env.APP_PREFIX ?? 'api';
+
+    this.logLevel = env.LOG_LEVEL ?? 'debug';
+    this.logDir = env.LOG_DIR ?? 'logs';
 
     this.jwtSecret = env.JWT_SECRET ?? 'change-me-in-production';
     this.jwtExpiresIn = env.JWT_EXPIRES_IN ?? '7d';

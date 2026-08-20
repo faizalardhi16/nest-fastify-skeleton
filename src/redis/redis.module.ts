@@ -3,6 +3,7 @@ import Redis from 'ioredis';
 import { EnvConfig } from '../config/env/env.config';
 import { RedisCacheService } from './redis-cache.service';
 import { REDIS_CLIENT } from './redis.constants';
+import { AppLoggerService } from '../logging/app-logger.service';
 
 /**
  * RedisModule — setup koneksi Redis untuk cache.
@@ -13,8 +14,8 @@ import { REDIS_CLIENT } from './redis.constants';
   providers: [
     {
       provide: REDIS_CLIENT,
-      inject: [EnvConfig],
-      useFactory: (config: EnvConfig): Redis => {
+      inject: [EnvConfig, AppLoggerService],
+      useFactory: (config: EnvConfig, logger: AppLoggerService): Redis => {
         const client = new Redis({
           host: config.redisHost,
           port: config.redisPort,
@@ -26,8 +27,9 @@ import { REDIS_CLIENT } from './redis.constants';
         });
         // Jangan crash app kalau Redis down — log & reconnect otomatis
         client.on('error', (err) => {
-          // eslint-disable-next-line no-console
-          console.error(`[REDIS] error: ${err.message}`);
+          logger.warn('Redis client error (reconnecting)', undefined, {
+            message: err.message,
+          });
         });
         return client;
       },
@@ -37,16 +39,23 @@ import { REDIS_CLIENT } from './redis.constants';
   exports: [REDIS_CLIENT, RedisCacheService],
 })
 export class RedisModule implements OnModuleDestroy {
-  constructor(@Inject(REDIS_CLIENT) private readonly client: Redis) {}
+  private readonly logger: AppLoggerService;
+
+  constructor(
+    @Inject(REDIS_CLIENT) private readonly client: Redis,
+    appLogger: AppLoggerService,
+  ) {
+    this.logger = appLogger.child(RedisModule.name);
+  }
 
   async onModuleInit(): Promise<void> {
     try {
       await this.client.connect();
-      // eslint-disable-next-line no-console
-      console.log('[REDIS] connected');
+      this.logger.info('Redis connected');
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn(`[REDIS] tidak tersedia saat init: ${String(err)}`);
+      this.logger.warn('Redis tidak tersedia saat init (degraded)', undefined, {
+        error: String(err),
+      });
     }
   }
 
