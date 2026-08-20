@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import * as mongoose from 'mongoose';
 import { Model, Schema, model, models } from 'mongoose';
 import { EnvConfig } from '../config/env/env.config';
 
@@ -38,11 +39,14 @@ export class MongoLogService {
   }
 
   async log(entry: Omit<AppLog, 'timestamp'>): Promise<void> {
+    // Kalau MongoDB belum/koneksinya terputus, langsung skip (jangan buffer 10s).
+    if (mongoose.connection.readyState !== 1) return;
     try {
       await this.model.create({ ...entry, timestamp: new Date() });
     } catch (err) {
-      // Jangan pernah gagal karena logging — swallow + stderr
-      this.logger.error(`[LOG-MONGO] Gagal menulis log ke MongoDB: ${String(err)}`);
+      // Jangan pernah gagal karena logging — swallow
+      // eslint-disable-next-line no-console
+      console.error(`[LOG-MONGO] Gagal menulis log: ${String(err)}`);
     }
   }
 

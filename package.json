@@ -5,7 +5,7 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "build": "nest build --builder swc",
+    "build": "nest build --builder swc && cp src/logging/pretty-transport.cjs dist/logging/pretty-transport.cjs",
     "start": "nest start --builder swc",
     "start:dev": "nest start --watch --builder swc",
     "start:prod": "node dist/main",

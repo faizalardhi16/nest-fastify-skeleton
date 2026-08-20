@@ -66,16 +66,11 @@ export function buildPinoLogger(config: EnvConfig): BuiltLogger {
     );
   }
 
-  // Sink console pretty di development (human-readable), JSON mentah di production
+  // Sink console warna di development (hijau=info, oren=debug, kuning=warn, merah=error),
+  // JSON mentah di production
   if (!config.isProduction) {
     transports.push({
-      target: 'pino-pretty',
-      options: {
-        colorize: true,
-        translateTime: 'SYS:HH:MM:ss',
-        ignore: 'pid,hostname',
-        singleLine: true,
-      },
+      target: resolve(__dirname, 'pretty-transport.cjs'),
       level,
     });
   }

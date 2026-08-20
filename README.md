@@ -57,7 +57,13 @@ Logger terstruktur berbasis **pino** — standard NestJS + Fastify.
 - **Sink output**:
   - `logs/app.log` — semua level (debug ke atas)
   - `logs/error.log` — hanya warn + error (mudah cari masalah)
-  - console pretty di development (human-readable, warna)
+  - console berwarna di development (ANSI 256):
+    - `INFO` → **hijau**
+    - `DEBUG` → **oranye**
+    - `WARN` → **kuning**
+    - `ERROR` → **merah**
+    (custom transport `src/logging/pretty-transport.cjs`, karena pino-pretty
+    bawaan tidak mendukung warna oranye)
 - **Fastify request log** — ter-set ke pino yang sama, jadi incoming/outgoing request
   juga tercatat (reqId, method, url, status, responseTime).
 - **`AppLoggerService`** — implementasi `LoggerService` NestJS, injectable di semua
@@ -107,6 +113,7 @@ src/
 │   ├── logging.module.ts        #   module (global), provide pino + AppLoggerService
 │   ├── app-logger.service.ts    #   LoggerService NestJS berbasis pino
 │   ├── pino-logger.ts           #   factory pino (file + console + redaction)
+│   ├── pretty-transport.cjs     #   transport console custom (warna per level)
 │   ├── logger.constants.ts      #   injection tokens
 │   └── mongo-log.service.ts     #   sink opsional ke MongoDB
 ├── redis/                       # Redis cache
