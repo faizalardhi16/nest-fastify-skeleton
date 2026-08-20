@@ -20,11 +20,19 @@ export class RedisCacheService {
     return `${this.config.redisPrefix}${raw}`;
   }
 
-  /** Set cache dengan TTL default dari env (detik). */
+  /**
+   * Set cache dengan TTL default dari env (detik).
+   * TTL <= 0 => tanpa expire (disimpan permanen sampai di-del manual).
+   */
   async set(key: string, value: unknown, ttlSeconds?: number): Promise<void> {
     try {
       const ttl = ttlSeconds ?? this.config.redisTtl;
-      await this.client.set(this.key(key), JSON.stringify(value), 'EX', ttl);
+      const raw = JSON.stringify(value);
+      if (ttl <= 0) {
+        await this.client.set(this.key(key), raw);
+      } else {
+        await this.client.set(this.key(key), raw, 'EX', ttl);
+      }
     } catch (err) {
       this.logger.warn(`[CACHE] set gagal: ${String(err)}`);
     }

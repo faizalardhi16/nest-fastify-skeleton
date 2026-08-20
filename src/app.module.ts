@@ -7,6 +7,7 @@ import { RedisModule } from './redis/redis.module';
 import { StorageModule } from './storage/storage.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
+import { DataModule } from './modules/data/data.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { HttpLoggingInterceptor } from './common/interceptors/http-logging.interceptor';
@@ -24,6 +25,7 @@ import { HttpLoggingInterceptor } from './common/interceptors/http-logging.inter
     StorageModule, // S3 (AWS/Alibaba)
     AuthModule, // JWT + cookie
     HealthModule, // /health
+    DataModule, // CRUD demo MongoDB/Redis/PostgreSQL
   ],
   providers: [
     // Global auth guard: semua route protected kecuali @Public()

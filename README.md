@@ -108,7 +108,7 @@ src/
 │   └── interceptors/            # Transform (envelope) + Logging
 ├── database/                    # Drizzle + PostgreSQL
 │   ├── database.module.ts
-│   └── schema/                  # Table definitions
+│   └── schema/                  # Table definitions (users, datastore_records)
 ├── logging/                     # Logging: pino structured + MongoDB sink
 │   ├── logging.module.ts        #   module (global), provide pino + AppLoggerService
 │   ├── app-logger.service.ts    #   LoggerService NestJS berbasis pino
@@ -131,7 +131,14 @@ src/
     │   ├── strategies/          # JwtStrategy
     │   ├── guards/              # JwtAuthGuard
     │   └── decorators/          # @Public, @CurrentUser
-    └── health/                  # /health endpoint
+    ├── health/                  # /health endpoint
+    └── data/                    # CRUD demo: MongoDB / Redis / PostgreSQL
+        ├── data.module.ts
+        ├── data.controller.ts   # POST/GET /api/data/{mongo,redis,postgres}
+        ├── mongo-data.service.ts
+        ├── redis-data.service.ts
+        ├── pg-data.service.ts
+        └── dto/create-item.dto.ts
 ```
 
 ## API
@@ -142,8 +149,33 @@ src/
 | `POST /api/auth/login` | Public | Login, set cookie |
 | `POST /api/auth/logout` | Public | Hapus cookie |
 | `GET /api/auth/me` | JWT | Profil user dari cookie |
+| `POST /api/data/mongo` | JWT | Create item ke MongoDB |
+| `GET /api/data/mongo/:key` | JWT | Get item MongoDB by key |
+| `POST /api/data/redis` | JWT | Create item ke Redis |
+| `GET /api/data/redis/:key` | JWT | Get item Redis by key |
+| `POST /api/data/postgres` | JWT | Create item ke PostgreSQL |
+| `GET /api/data/postgres/:key` | JWT | Get item PostgreSQL by key |
 
 Swagger UI: **`/docs`**
+
+### Data Store (Mongo / Redis / PostgreSQL)
+
+Contoh body untuk semua endpoint `POST /api/data/*`:
+
+```json
+{
+  "key": "barang-demo-1",
+  "value": "Data PostgreSQL pertama",
+  "meta": { "source": "test", "n": 1 }
+}
+```
+
+- **`item_key`** unik per store — create ulang dengan key sama akan menolak (PG) / unik constraint (Mongo).
+- **MongoDB** → collection `datastore_items` di db `MONGO_DB`.
+- **Redis** → key `cache:data:<key>` (TTL 0 = permanen, sampai di-del manual).
+- **PostgreSQL** → tabel `datastore_records` (via Drizzle).
+
+> Endpoint ini butuh **auth** (`GET /api/auth/login` → cookie JWT).
 
 ## Konfigurasi env penting
 
