@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import * as mongoose from 'mongoose';
+import mongoose from 'mongoose';
 import { Model, Schema, model, models } from 'mongoose';
 import { EnvConfig } from '../config/env/env.config';
 

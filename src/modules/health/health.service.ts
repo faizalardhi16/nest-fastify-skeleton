@@ -6,6 +6,7 @@ import { STORAGE_PROVIDER } from '../../storage/storage.module';
 import { StorageProvider } from '../../storage/storage-provider.interface';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../database/schema';
+import mongoose from 'mongoose';
 
 export interface HealthStatus {
   status: 'ok' | 'degraded';
@@ -63,11 +64,6 @@ export class HealthService {
   }
 
   private async checkMongo(): Promise<boolean> {
-    try {
-      const mongoose = await import('mongoose');
-      return mongoose.connection.readyState === 1;
-    } catch {
-      return false;
-    }
+    return mongoose.connection.readyState === 1;
   }
 }
