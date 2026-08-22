@@ -185,7 +185,14 @@ APP_PREFIX=api
 JWT_SECRET=...            # ganti di produksi!
 COOKIE_SECURE=true        # wajib true di HTTPS/produksi
 STORAGE_PROVIDER=aws      # 'aws' | 'alibaba'
+# MongoDB wajib memuat kredensial jika authentication aktif:
+MONGO_URL=mongodb://mongo_user:mongo_password@localhost:27017/nest_fastify_logs?authSource=admin
+MONGO_DB=nest_fastify_logs
 ```
+
+Jika muncul `Command insert requires authentication`, ubah `MONGO_URL` di `.env`
+dengan username, password, host, port, dan `authSource` MongoDB yang benar.
+`authSource` adalah database tempat user MongoDB dibuat, biasanya `admin`.
 
 ## Docker
 

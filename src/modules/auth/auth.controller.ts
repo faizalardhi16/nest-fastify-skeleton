@@ -13,12 +13,13 @@ import {
   CurrentUser,
   Public,
 } from './decorators/auth.decorators';
-import { AuthUserDto, LoginDto } from './dto/auth.dto';
+import { AuthUserDto, LoginDto, RegisterDto } from './dto/auth.dto';
 import { AuthService } from './auth.service';
+import { UsersService } from './users.service';
 
 /**
- * AuthController — HTTP endpoint untuk login/logout & profil.
- * SOLID: controller cuma routing; logic ada di AuthService.
+ * AuthController — HTTP endpoint untuk register/login/logout & profil.
+ * SOLID: controller cuma routing; logic ada di AuthService/UsersService.
  */
 @ApiTags('Auth')
 @ApiCookieAuth()
@@ -26,8 +27,17 @@ import { AuthService } from './auth.service';
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
+    private readonly usersService: UsersService,
     private readonly config: EnvConfig,
   ) {}
+
+  @Public()
+  @Post('register')
+  @ApiOperation({ summary: 'Registrasi user baru (role default USER)' })
+  async register(@Body() dto: RegisterDto): Promise<AuthUserDto> {
+    const user = await this.usersService.registerUser(dto);
+    return { userId: user.ID, email: user.EMAIL, roles: ['USER'] };
+  }
 
   @Public()
   @Post('login')
@@ -35,8 +45,8 @@ export class AuthController {
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) reply: FastifyReply,
-  ): Promise<{ email: string }> {
-    const { accessToken } = await this.authService.login(dto.email, dto.password);
+  ): Promise<AuthUserDto> {
+    const { accessToken, user } = await this.authService.login(dto.email, dto.password);
 
     reply.setCookie(this.config.cookieName, accessToken, {
       httpOnly: this.config.cookieHttpOnly,
@@ -46,7 +56,7 @@ export class AuthController {
       maxAge: 60 * 60 * 24 * 7, // 7 hari
     });
 
-    return { email: dto.email };
+    return { userId: user.userId, email: user.email, roles: user.roles };
   }
 
   @Public()
@@ -62,6 +72,12 @@ export class AuthController {
   @Get('me')
   @ApiOperation({ summary: 'Profil user yang login (dari cookie JWT)' })
   me(@CurrentUser() user: AuthUser): AuthUserDto {
-    return { userId: user.userId, email: user.email };
+    return { userId: user.userId, email: user.email, roles: user.roles };
+  }
+
+  @Get('permissions')
+  @ApiOperation({ summary: 'Permission efektif user yang login (live dari DB)' })
+  async permissions(@CurrentUser() user: AuthUser): Promise<string[]> {
+    return this.usersService.getPermissionCodes(user.userId);
   }
 }

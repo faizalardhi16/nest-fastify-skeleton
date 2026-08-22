@@ -8,6 +8,7 @@ import { AuthUser } from '../decorators/auth.decorators';
 export interface JwtPayload {
   sub: number;
   email: string;
+  roles?: string[];
 }
 
 /**
@@ -29,6 +30,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   validate(payload: JwtPayload): AuthUser {
-    return { userId: payload.sub, email: payload.email };
+    return { userId: payload.sub, email: payload.email, roles: payload.roles ?? [] };
   }
 }

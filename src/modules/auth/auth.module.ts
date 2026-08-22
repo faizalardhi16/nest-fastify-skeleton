@@ -5,9 +5,11 @@ import { EnvConfig } from '../../config/env/env.config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { UsersController } from './users.controller';
+import { UsersService } from './users.service';
 
 /**
- * AuthModule — JWT auth via HttpOnly cookie.
+ * AuthModule — JWT auth via HttpOnly cookie + RBAC (UAR_* tables).
  * SOLID: module ini urus semua concern auth (service, strategy, controller).
  */
 @Module({
@@ -21,8 +23,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       }),
     }),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService],
+  controllers: [AuthController, UsersController],
+  providers: [AuthService, JwtStrategy, UsersService],
+  exports: [AuthService, UsersService],
 })
 export class AuthModule {}

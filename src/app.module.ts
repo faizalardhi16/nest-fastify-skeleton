@@ -9,6 +9,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
 import { DataModule } from './modules/data/data.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
+import { PermissionsGuard } from './modules/auth/guards/permissions.guard';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { HttpLoggingInterceptor } from './common/interceptors/http-logging.interceptor';
 
@@ -30,6 +31,8 @@ import { HttpLoggingInterceptor } from './common/interceptors/http-logging.inter
   providers: [
     // Global auth guard: semua route protected kecuali @Public()
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    // Global RBAC guard: cek @RequirePermissions() setelah auth (urutan penting)
+    { provide: APP_GUARD, useClass: PermissionsGuard },
     // Envelope response + logging
     { provide: APP_INTERCEPTOR, useClass: TransformInterceptor },
     { provide: APP_INTERCEPTOR, useClass: HttpLoggingInterceptor },

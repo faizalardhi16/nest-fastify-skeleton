@@ -1,37 +1,65 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { EnvConfig } from '../../config/env/env.config';
+import { UsersService } from './users.service';
+import { AuthenticatedUser } from './users.service';
 import { JwtPayload } from './strategies/jwt.strategy';
 
 export interface LoginResponse {
   accessToken: string;
+  user: {
+    userId: number;
+    email: string;
+    name: string | null;
+    roles: string[];
+  };
 }
 
 /**
- * AuthService — urus login/logout & token lifecycle. SOLID: cuma business logic auth.
- * NOTE: validasi user asli (cek DB/kredensial) plug di sini sesuai kebutuhan bisnis.
+ * AuthService — urus login/logout & token lifecycle.
+ * SOLID: cuma business logic auth; akses DB didelegasikan ke UsersService.
  */
 @Injectable()
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly config: EnvConfig,
+    private readonly usersService: UsersService,
   ) {}
 
   /**
-   * Login contoh: buat JWT untuk user. TODO: ganti validasi kredensial dengan
-   * repo user asli (misal Drizzle users table).
+   * Login: validasi kredensial ke UAR_USERS (bcrypt), lalu terbitkan JWT
+   * berisi sub/email/roles (HttpOnly cookie diset di controller).
    */
-  async login(email: string, _password: string): Promise<LoginResponse> {
-    // TODO: validasi kredensial ke database (Drizzle) — ini demo, langsung generate.
-    const payload: JwtPayload = { sub: 1, email };
-    const accessToken = await this.jwtService.signAsync(payload);
-    return { accessToken };
+  async login(email: string, password: string): Promise<LoginResponse> {
+    const authenticated = await this.validateUser(email, password);
+    if (!authenticated) {
+      throw new UnauthorizedException('Email atau password salah');
+    }
+
+    const { user, roles } = authenticated;
+    const accessToken = await this.createToken(user.ID, user.EMAIL, roles);
+    return {
+      accessToken,
+      user: { userId: user.ID, email: user.EMAIL, name: user.NAME, roles },
+    };
+  }
+
+  /** Validasi kredensial mentah (dipakai login & test). */
+  async validateUser(
+    email: string,
+    password: string,
+  ): Promise<AuthenticatedUser | null> {
+    return this.usersService.validateCredentials(email, password);
   }
 
   /** Generate access token dari payload (dipakai setelah login valid). */
-  createToken(userId: number, email: string): Promise<string> {
-    return this.jwtService.signAsync({ sub: userId, email });
+  createToken(
+    userId: number,
+    email: string,
+    roles: string[] = [],
+  ): Promise<string> {
+    return this.jwtService.signAsync({ sub: userId, email, roles });
   }
 
   /** Verify token (dipakai saat butuh paksa re-validasi). */
