@@ -26,3 +26,9 @@ coverage/
 # IDE
 .vscode/
 .idea/
+
+# SKILLS
+.palbox/
+.codex/
+.cursor/
+.claude/
